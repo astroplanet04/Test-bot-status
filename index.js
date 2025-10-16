@@ -17,7 +17,7 @@ const client = new Client({
 // Use environment variables with fallback to config.json
 const token = process.env.DISCORD_TOKEN || config.token;
 const serverIP = process.env.SERVER_IP || config.serverIP;
-const serverPort = parseInt(process.env.SERVER_PORT) || config.serverPort;
+const serverPort = parseInt(process.env.SERVER_PORT || process.env.SERVER_PORT) || config.serverPort;
 const channelID = process.env.CHANNEL_ID || config.channelID;
 
 let statusMessage = null;
@@ -147,6 +147,16 @@ function generateLoadingEmbed() {
 
 // Start bot
 client.login(token);
+
+// Server HTTP per Render (risponde su / per evitare "No open ports detected")
+const PORT = process.env.PORT || 3000;
+const server = require('http').createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Minecraft Status Bot is running on Render!');
+});
+server.listen(PORT, () => {
+  console.log(`Server HTTP attivo su porta ${PORT}`);
+});
 
 /* Made By Milcon Development
 
