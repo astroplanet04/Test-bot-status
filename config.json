@@ -1,0 +1,6 @@
+{
+    "token": "YOUR_DISCORD_BOT_TOKEN",
+    "serverIP": "your-minecraft-server-ip",
+    "serverPort": 25565,
+    "channelID": "your-discord-channel-id"
+  }
