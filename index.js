@@ -1,20 +1,24 @@
 /* Made By Milcon Development
 
-  Discord : https://dsc.gg/milcondev
-  website : https://milcon.hs.vc 
+  Discord: https://dsc.gg/milcondev
+  Website: https://milcon.hs.vc 
 
-  */
+*/
 
 require("dotenv").config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const util = require("minecraft-server-util");
-const config = require("./config.json"); // Load config.json
+const config = require("./config.json"); // Load config.json for local fallback
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
 
-const { token, serverIP, serverPort, channelID } = config; // Extract config values
+// Use environment variables with fallback to config.json
+const token = process.env.DISCORD_TOKEN || config.token;
+const serverIP = process.env.SERVER_IP || config.serverIP;
+const serverPort = parseInt(process.env.SERVER_PORT) || config.serverPort;
+const channelID = process.env.CHANNEL_ID || config.channelID;
 
 let statusMessage = null;
 let lastStatus = null; // Track last known status
@@ -144,14 +148,9 @@ function generateLoadingEmbed() {
 // Start bot
 client.login(token);
 
-
-
-
-
-
 /* Made By Milcon Development
 
-  Discord : https://dsc.gg/milcondev
-  website : https://milcon.hs.vc 
+  Discord: https://dsc.gg/milcondev
+  Website: https://milcon.hs.vc 
 
-  */
+*/
