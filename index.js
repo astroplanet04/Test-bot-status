@@ -139,17 +139,17 @@ async function updateServerStatus() {
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                // Riga 1 (2 campi)
+                // Riga 1
                 { name: "📝 Version", value: cleanVersionName, inline: true }, 
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
-                // Riga 2 (2 campi)
-                { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
+                // Riga 2
+                { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true }
+                // Riga 3
                 { name: "📶 Protocollo", value: response.version.protocol, inline: true },
-                // Riga 3 (1 campo) - L'ultimo aggiornamento occuperà tutta la riga se inline:true è rimosso o se rimane solo un campo
                 { 
                     name: "🕟 Ultimo Aggiorn.", 
                     value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
-                    inline: false // Imposto a false per centrare l'ultimo aggiornamento su una riga intera
+                    inline: true 
                 },
                 // Riga 4 (Campo completo)
                 { name: "📢 MOTD", value: response.motd.clean || "No message", inline: false }
