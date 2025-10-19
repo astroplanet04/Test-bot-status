@@ -102,10 +102,12 @@ async function updateServerStatus() {
         // Aggiunge i campi standard
         fields.push(
              // Usa la versione pulita (cleanVersionName)
-            { name: "📝 Versione", value: `\`${cleanVersionName}\``, inline: true }, 
-            { name: "👥 Massimi Giocatori", value: `**${response.players.online}** / ${response.players.max}`, inline: true },
-            { name: "📊 Latenza (Ping)", value: `\`${response.roundTripLatency}ms\``, inline: true },
-            { name: "📢 MOTD", value: response.motd.clean || "Nessun messaggio", inline: false }
+            .addFields(
+    { name: "📝 Version", value: cleanVersionName, inline: true }, 
+    { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
+    { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
+    // ... rimosso
+)
         );
 
         const embed = new EmbedBuilder()
@@ -194,3 +196,4 @@ server.listen(PORT, () => {
   Website: https://milcon.hs.vc 
 
 */
+
