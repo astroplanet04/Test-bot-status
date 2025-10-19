@@ -75,10 +75,20 @@ async function updateServerStatus() {
             }
         }
 
-        // --- INIZIO MODIFICA PER RIMUOVERE TESTO TRA PARENTESI (es. FlameCord) ---
+        // --- INIZIO MODIFICA PER ESTRARRE SOLO L'INTERVALLO DI VERSIONI ---
         const rawVersionName = response.version.name;
-        // La regex /\s*\([^)]+\)/g trova e rimuove ' (testo tra parentesi)'
-        const cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, ''); 
+        let cleanVersionName = rawVersionName;
+
+        // Tenta di trovare un pattern di versione (es. "1.7.x-1.21.x" o "1.20.4")
+        const versionMatch = rawVersionName.match(/(\d+\.\w+\.?\w*-?\d*\.?\w*\.?\w*)/);
+        
+        if (versionMatch && versionMatch[0]) {
+            // Se trova una corrispondenza, usa solo quella
+            cleanVersionName = versionMatch[0];
+        } else {
+             // Soluzione di riserva: prova a rimuovere solo i testi tra parentesi
+             cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, '');
+        }
         // --- FINE MODIFICA ---
 
         const embed = new EmbedBuilder()
@@ -86,7 +96,7 @@ async function updateServerStatus() {
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                // HO MODIFICATO QUESTA RIGA: uso la versione pulita
+                // Utilizza la versione pulita
                 { name: "📝 Version", value: cleanVersionName, inline: true }, 
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
@@ -171,4 +181,3 @@ server.listen(PORT, () => {
   Website: https://milcon.hs.vc 
 
 */
-
