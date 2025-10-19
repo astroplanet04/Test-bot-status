@@ -145,18 +145,17 @@ async function updateServerStatus() {
                 // Riga 2 (2 campi)
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
                 { name: "📶 Protocollo", value: response.version.protocol, inline: true },
-                // Riga 3 (1 campo)
+                // Riga 3 (1 campo) - L'ultimo aggiornamento occuperà tutta la riga se inline:true è rimosso o se rimane solo un campo
                 { 
                     name: "🕟 Ultimo Aggiorn.", 
                     value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
-                    inline: false // Imposto a false per occupare una riga intera
+                    inline: false // Imposto a false per centrare l'ultimo aggiornamento su una riga intera
                 },
                 // Riga 4 (Campo completo)
                 { name: "📢 MOTD", value: response.motd.clean || "No message", inline: false }
             )
             .setThumbnail(`https://api.mcsrvstat.us/icon/${serverIP}`)
-            // MODIFICA QUI: Rimosso :${serverPort} per non mostrare la porta nel banner
-            .setImage(`https://mcapi.us/server/image?theme=dark&ip=${serverIP}`) 
+            .setImage(`https://mcapi.us/server/image?theme=dark&ip=${serverIP}:${serverPort}`)
             .setFooter({ text: "Last updated", iconURL: "https://cdn-icons-png.flaticon.com/512/906/906361.png" })
             .setTimestamp();
 
