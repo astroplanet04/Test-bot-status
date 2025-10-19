@@ -75,12 +75,19 @@ async function updateServerStatus() {
             }
         }
 
+        // --- INIZIO MODIFICA PER RIMUOVERE TESTO TRA PARENTESI (es. FlameCord) ---
+        const rawVersionName = response.version.name;
+        // La regex /\s*\([^)]+\)/g trova e rimuove ' (testo tra parentesi)'
+        const cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, ''); 
+        // --- FINE MODIFICA ---
+
         const embed = new EmbedBuilder()
             .setTitle("🟢 Minecraft Server Online")
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                { name: "📝 Version", value: response.version.name, inline: true },
+                // HO MODIFICATO QUESTA RIGA: uso la versione pulita
+                { name: "📝 Version", value: cleanVersionName, inline: true }, 
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
                 { name: "🎮 Online Players", value: playerList, inline: false },
@@ -164,3 +171,4 @@ server.listen(PORT, () => {
   Website: https://milcon.hs.vc 
 
 */
+
