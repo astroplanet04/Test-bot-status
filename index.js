@@ -6,7 +6,8 @@
 */
 
 require("dotenv").config();
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+// AGGIUNTO: ButtonBuilder, ActionRowBuilder, ButtonStyle per i bottoni
+const { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } = require("discord.js");
 const util = require("minecraft-server-util");
 const config = require("./config.json"); // Load config.json for local fallback
 
@@ -20,20 +21,40 @@ const serverIP = process.env.SERVER_IP || config.serverIP;
 const serverPort = parseInt(process.env.SERVER_PORT || process.env.SERVER_PORT) || config.serverPort;
 const channelID = process.env.CHANNEL_ID || config.channelID;
 
+// Nuove costanti per i bottoni
+const WEBSITE_URL = 'https://brevthcraft.net';
+const DISCORD_CHANNEL_URL = 'https://discord.com/channels/1333206767785742408/1352014121641574410';
+const COPY_IP_LABEL = 'mc.brevthcraft.net';
+
 let statusMessage = null;
 let lastStatus = null; // Track last known status
 
 client.once("ready", async () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
 
-    // Iniziamo l'aggiornamento in background prima di creare il messaggio
-    // per ridurre il ritardo percepito.
+    // Avviamo il primo aggiornamento immediatamente e poi impostiamo il timer
     updateServerStatus();
     setInterval(updateServerStatus, 10000); // Auto-update every 10 sec
 
-    // Cerchiamo/Creiamo il messaggio iniziale dopo aver avviato l'update
+    // Cerchiamo/Creiamo il messaggio iniziale
     await fetchOrCreateStatusMessage(); 
 });
+
+// Gestione dei Bottoni (Interazioni)
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+    
+    // Controlla se l'ID personalizzato è quello del bottone 'copy_ip'
+    if (interaction.customId === 'copy_ip') {
+        
+        // Invia una risposta temporanea e nascosta all'utente
+        await interaction.reply({ 
+            content: `Copia l'IP del server: \`${serverIP}\``, 
+            ephemeral: true // Solo l'utente che ha cliccato vede questo messaggio
+        });
+    }
+});
+
 
 // Function to fetch or create the status message
 async function fetchOrCreateStatusMessage() {
@@ -69,7 +90,7 @@ async function updateServerStatus() {
         }
         lastStatus = "online";
 
-        // Get the player list
+        // Get the player list (variabile creata ma non usata nell'embed finale)
         let playerList = "No players online.";
         if (response.players.sample && response.players.sample.length > 0) {
             playerList = response.players.sample.map(player => player.name).join(", ");
@@ -78,54 +99,80 @@ async function updateServerStatus() {
             }
         }
 
-        // --- INIZIO MODIFICA PER LA PULIZIA DELLA VERSIONE ---
+        // --- MODIFICA PER LA PULIZIA DELLA VERSIONE (FlameCord) ---
         const rawVersionName = response.version.name;
         let cleanVersionName = rawVersionName;
 
-        // Tenta di trovare e isolare solo la parte numerica/intervallo della versione
-        // (es. estrae "1.7.x-1.21.x" da "FlameCord 1.7.x-1.21.x")
-        // Questa regex è stata ottimizzata per il tuo caso.
+        // Tenta di isolare solo la parte numerica/intervallo
         const versionMatch = rawVersionName.match(/(\d+\.\w+\.?\w*-?\d*\.?\w*\.?\w*)/);
         
         if (versionMatch && versionMatch[0]) {
             cleanVersionName = versionMatch[0];
         } else {
-             // Fallback: pulisce il testo tra parentesi (es. "(BungeeCord)")
+             // Fallback: pulisce il testo tra parentesi (se il formato è diverso)
              cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, '');
         }
-        // --- FINE MODIFICA ---
+        // ------------------------------------------------------------------------
+
+        // --- CREAZIONE DEI BOTTONI PER STATO ONLINE ---
+        const websiteButton = new ButtonBuilder()
+            .setLabel('Sito Web: BrevtChraft.net')
+            .setStyle(ButtonStyle.Link) // Link reindirizza all'URL
+            .setURL(WEBSITE_URL);
+
+        const copyIpButton = new ButtonBuilder()
+            .setLabel(`Copia IP: ${COPY_IP_LABEL}`)
+            .setStyle(ButtonStyle.Primary) // Bottone interattivo (blu)
+            .setCustomId('copy_ip'); // ID usato per gestire il click
+
+        const channelButton = new ButtonBuilder()
+            .setLabel('Canale Discord')
+            .setStyle(ButtonStyle.Link)
+            .setURL(DISCORD_CHANNEL_URL);
+
+        const onlineRow = new ActionRowBuilder()
+            .addComponents(websiteButton, copyIpButton, channelButton);
+        // ------------------------------------------
 
         const embed = new EmbedBuilder()
             .setTitle("🟢 Minecraft Server Online")
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                // Usa la versione pulita (cleanVersionName)
+                // Riga 1 (2 campi)
                 { name: "📝 Version", value: cleanVersionName, inline: true }, 
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
+                // Riga 2 (2 campi)
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
-                { name: "🎮 Online Players", value: playerList, inline: false },
+                { name: "📶 Protocollo", value: response.version.protocol, inline: true },
+                // Riga 3 (1 campo)
+                { 
+                    name: "🕟 Ultimo Aggiorn.", 
+                    value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
+                    inline: false // Imposto a false per occupare una riga intera
+                },
+                // Riga 4 (Campo completo)
                 { name: "📢 MOTD", value: response.motd.clean || "No message", inline: false }
             )
             .setThumbnail(`https://api.mcsrvstat.us/icon/${serverIP}`)
-            .setImage(`https://mcapi.us/server/image?theme=dark&ip=${serverIP}:${serverPort}`)
+            // MODIFICA QUI: Rimosso :${serverPort} per non mostrare la porta nel banner
+            .setImage(`https://mcapi.us/server/image?theme=dark&ip=${serverIP}`) 
             .setFooter({ text: "Last updated", iconURL: "https://cdn-icons-png.flaticon.com/512/906/906361.png" })
             .setTimestamp();
 
         // Ensure the status message exists before editing
         if (!statusMessage) {
             console.log("⚠️ Status message missing! Resending...");
-            // Non usiamo await qui per non bloccare il loop
-            fetchOrCreateStatusMessage(); 
+            await fetchOrCreateStatusMessage(); 
         }
 
-        // If the message was deleted, create a new one before updating
+        // AGGIUNTO: Invio del messaggio con i componenti (bottoni)
         try {
-            await statusMessage.edit({ embeds: [embed] });
+            await statusMessage.edit({ embeds: [embed], components: [onlineRow] });
         } catch (error) {
             console.log("⚠️ Status message might have been deleted, creating a new one...");
             await fetchOrCreateStatusMessage();
-            await statusMessage.edit({ embeds: [embed] });
+            await statusMessage.edit({ embeds: [embed], components: [onlineRow] });
         }
 
     } catch (error) {
@@ -135,10 +182,25 @@ async function updateServerStatus() {
             console.log("❌ Server is offline, updating message...");
         }
         lastStatus = "offline";
+        
+        // --- CREAZIONE DEI BOTTONI PER STATO OFFLINE (Senza copia IP) ---
+        const websiteButtonOffline = new ButtonBuilder()
+            .setLabel('Sito Web: BrevtChraft.net')
+            .setStyle(ButtonStyle.Link)
+            .setURL(WEBSITE_URL);
+
+        const channelButtonOffline = new ButtonBuilder()
+            .setLabel('Canale Discord')
+            .setStyle(ButtonStyle.Link)
+            .setURL(DISCORD_CHANNEL_URL);
+            
+        const offlineRow = new ActionRowBuilder()
+            .addComponents(websiteButtonOffline, channelButtonOffline);
+        // ------------------------------------------
 
         const offlineEmbed = new EmbedBuilder()
             .setTitle("🔴 Minecraft Server Offline")
-            .setDescription(`🚫 The server \`${serverIP}\` is currently offline or unreachable.`)
+            .setDescription(`🚫 The server \`${serverIP}\` è attualmente offline o irraggiungibile.`)
             .setColor("Red")
             .setThumbnail("https://cdn-icons-png.flaticon.com/512/1828/1828843.png")
             .setTimestamp();
@@ -148,12 +210,13 @@ async function updateServerStatus() {
             await fetchOrCreateStatusMessage();
         }
 
+        // AGGIUNTO: Invio del messaggio offline con i componenti
         try {
-            await statusMessage.edit({ embeds: [offlineEmbed] });
+            await statusMessage.edit({ embeds: [offlineEmbed], components: [offlineRow] });
         } catch (error) {
             console.log("⚠️ Status message might have been deleted, creating a new one...");
             await fetchOrCreateStatusMessage();
-            await statusMessage.edit({ embeds: [offlineEmbed] });
+            await statusMessage.edit({ embeds: [offlineEmbed], components: [offlineRow] });
         }
     }
 }
