@@ -69,22 +69,26 @@ async function updateServerStatus() {
         }
         lastStatus = "online";
 
-        // Get the player list
-        let playerList = "No players online.";
+        // Prepara l'array dei campi per l'embed
+        const fields = [];
+
+        // Costruisce la lista giocatori solo se presenti
         if (response.players.sample && response.players.sample.length > 0) {
-            playerList = response.players.sample.map(player => player.name).join(", ");
+            let playerList = response.players.sample.map(player => player.name).join("`, `");
+            playerList = `\`${playerList}\``; // Aggiunge i backtick alla lista intera
             if (playerList.length > 1024) {
-                playerList = playerList.substring(0, 1020) + "..."; // Trim if too long
+                playerList = playerList.substring(0, 1020) + "...`"; // Trim if too long
             }
+            // *** IL CAMPO VIENE AGGIUNTO SOLO SE CI SONO GIOCATORI ***
+            fields.push({ name: "🎮 Giocatori Online", value: playerList, inline: false });
         }
+        // Il campo "Online Players" NON viene aggiunto se non ci sono giocatori.
 
         // --- INIZIO MODIFICA PER LA PULIZIA DELLA VERSIONE ---
         const rawVersionName = response.version.name;
         let cleanVersionName = rawVersionName;
 
         // Tenta di trovare e isolare solo la parte numerica/intervallo della versione
-        // (es. estrae "1.7.x-1.21.x" da "FlameCord 1.7.x-1.21.x")
-        // Questa regex è stata ottimizzata per il tuo caso.
         const versionMatch = rawVersionName.match(/(\d+\.\w+\.?\w*-?\d*\.?\w*\.?\w*)/);
         
         if (versionMatch && versionMatch[0]) {
@@ -95,21 +99,24 @@ async function updateServerStatus() {
         }
         // --- FINE MODIFICA ---
 
+        // Aggiunge i campi standard
+        fields.push(
+             // Usa la versione pulita (cleanVersionName)
+            { name: "📝 Versione", value: `\`${cleanVersionName}\``, inline: true }, 
+            { name: "👥 Massimi Giocatori", value: `**${response.players.online}** / ${response.players.max}`, inline: true },
+            { name: "📊 Latenza (Ping)", value: `\`${response.roundTripLatency}ms\``, inline: true },
+            { name: "📢 MOTD", value: response.motd.clean || "Nessun messaggio", inline: false }
+        );
+
         const embed = new EmbedBuilder()
-            .setTitle("🟢 Minecraft Server Online")
-            .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
-            .setColor("Green")
-            .addFields(
-                // Usa la versione pulita (cleanVersionName)
-                { name: "📝 Version", value: cleanVersionName, inline: true }, 
-                { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
-                { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
-                { name: "🎮 Online Players", value: playerList, inline: false },
-                { name: "📢 MOTD", value: response.motd.clean || "No message", inline: false }
-            )
+            // Titolo più descrittivo con l'IP
+            .setTitle(`🟢 ${response.motd.clean.split('\n')[0] || "Minecraft Server Online"}`) 
+            .setDescription(`**🌐 Indirizzo:** \`${serverIP}\``)
+            .setColor("#57F287") // Green Discord standard
+            .addFields(fields)
             .setThumbnail(`https://api.mcsrvstat.us/icon/${serverIP}`)
             .setImage(`https://mcapi.us/server/image?theme=dark&ip=${serverIP}:${serverPort}`)
-            .setFooter({ text: "Last updated", iconURL: "https://cdn-icons-png.flaticon.com/512/906/906361.png" })
+            .setFooter({ text: `Ultimo aggiornamento: ${new Date().toLocaleTimeString()} (Ogni 10s)`, iconURL: "https://cdn-icons-png.flaticon.com/512/906/906361.png" })
             .setTimestamp();
 
         // Ensure the status message exists before editing
@@ -125,7 +132,8 @@ async function updateServerStatus() {
         } catch (error) {
             console.log("⚠️ Status message might have been deleted, creating a new one...");
             await fetchOrCreateStatusMessage();
-            await statusMessage.edit({ embeds: [embed] });
+            // Tentativo di modifica dopo la ricreazione
+            if (statusMessage) await statusMessage.edit({ embeds: [embed] }); 
         }
 
     } catch (error) {
@@ -138,8 +146,8 @@ async function updateServerStatus() {
 
         const offlineEmbed = new EmbedBuilder()
             .setTitle("🔴 Minecraft Server Offline")
-            .setDescription(`🚫 The server \`${serverIP}\` is currently offline or unreachable.`)
-            .setColor("Red")
+            .setDescription(`🚫 Il server \`${serverIP}\` è attualmente spento o irraggiungibile.`)
+            .setColor("#ED4245") // Red Discord standard
             .setThumbnail("https://cdn-icons-png.flaticon.com/512/1828/1828843.png")
             .setTimestamp();
 
@@ -153,7 +161,7 @@ async function updateServerStatus() {
         } catch (error) {
             console.log("⚠️ Status message might have been deleted, creating a new one...");
             await fetchOrCreateStatusMessage();
-            await statusMessage.edit({ embeds: [offlineEmbed] });
+            if (statusMessage) await statusMessage.edit({ embeds: [offlineEmbed] }); 
         }
     }
 }
@@ -161,9 +169,9 @@ async function updateServerStatus() {
 // Generates a loading embed for when the bot starts
 function generateLoadingEmbed() {
     return new EmbedBuilder()
-        .setTitle("⏳ Fetching Minecraft server status...")
-        .setColor("Yellow")
-        .setDescription("Please wait while we fetch the latest server details.")
+        .setTitle("⏳ Caricamento stato del server Minecraft...")
+        .setColor("#FEE75C") // Yellow Discord standard
+        .setDescription("Attendere prego mentre recuperiamo gli ultimi dettagli del server.")
         .setTimestamp();
 }
 
@@ -173,11 +181,11 @@ client.login(token);
 // Server HTTP per Render (risponde su / per evitare "No open ports detected")
 const PORT = process.env.PORT || 3000;
 const server = require('http').createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Minecraft Status Bot is running on Render!');
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Minecraft Status Bot is running on Render!');
 });
 server.listen(PORT, () => {
-  console.log(`Server HTTP attivo su porta ${PORT}`);
+    console.log(`Server HTTP attivo su porta ${PORT}`);
 });
 
 /* Made By Milcon Development
