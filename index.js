@@ -26,10 +26,13 @@ let lastStatus = null; // Track last known status
 client.once("ready", async () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
 
-    await fetchOrCreateStatusMessage(); // Fetch or create message
-
+    // Iniziamo l'aggiornamento in background prima di creare il messaggio
+    // per ridurre il ritardo percepito.
     updateServerStatus();
     setInterval(updateServerStatus, 10000); // Auto-update every 10 sec
+
+    // Cerchiamo/Creiamo il messaggio iniziale dopo aver avviato l'update
+    await fetchOrCreateStatusMessage(); 
 });
 
 // Function to fetch or create the status message
@@ -75,18 +78,19 @@ async function updateServerStatus() {
             }
         }
 
-        // --- INIZIO MODIFICA PER ESTRARRE SOLO L'INTERVALLO DI VERSIONI ---
+        // --- INIZIO MODIFICA PER LA PULIZIA DELLA VERSIONE ---
         const rawVersionName = response.version.name;
         let cleanVersionName = rawVersionName;
 
-        // Tenta di trovare un pattern di versione (es. "1.7.x-1.21.x" o "1.20.4")
+        // Tenta di trovare e isolare solo la parte numerica/intervallo della versione
+        // (es. estrae "1.7.x-1.21.x" da "FlameCord 1.7.x-1.21.x")
+        // Questa regex è stata ottimizzata per il tuo caso.
         const versionMatch = rawVersionName.match(/(\d+\.\w+\.?\w*-?\d*\.?\w*\.?\w*)/);
         
         if (versionMatch && versionMatch[0]) {
-            // Se trova una corrispondenza, usa solo quella
             cleanVersionName = versionMatch[0];
         } else {
-             // Soluzione di riserva: prova a rimuovere solo i testi tra parentesi
+             // Fallback: pulisce il testo tra parentesi (es. "(BungeeCord)")
              cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, '');
         }
         // --- FINE MODIFICA ---
@@ -96,7 +100,7 @@ async function updateServerStatus() {
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                // Utilizza la versione pulita
+                // Usa la versione pulita (cleanVersionName)
                 { name: "📝 Version", value: cleanVersionName, inline: true }, 
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
@@ -111,7 +115,8 @@ async function updateServerStatus() {
         // Ensure the status message exists before editing
         if (!statusMessage) {
             console.log("⚠️ Status message missing! Resending...");
-            await fetchOrCreateStatusMessage();
+            // Non usiamo await qui per non bloccare il loop
+            fetchOrCreateStatusMessage(); 
         }
 
         // If the message was deleted, create a new one before updating
