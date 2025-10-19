@@ -26,11 +26,12 @@ let lastStatus = null; // Track last known status
 client.once("ready", async () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
 
-    // Avviamo il primo aggiornamento immediatamente e poi impostiamo il timer
+    // Iniziamo l'aggiornamento in background prima di creare il messaggio
+    // per ridurre il ritardo percepito.
     updateServerStatus();
     setInterval(updateServerStatus, 10000); // Auto-update every 10 sec
 
-    // Cerchiamo/Creiamo il messaggio iniziale
+    // Cerchiamo/Creiamo il messaggio iniziale dopo aver avviato l'update
     await fetchOrCreateStatusMessage(); 
 });
 
@@ -68,7 +69,7 @@ async function updateServerStatus() {
         }
         lastStatus = "online";
 
-        // Get the player list (variabile creata ma non usata nell'embed finale)
+        // Get the player list
         let playerList = "No players online.";
         if (response.players.sample && response.players.sample.length > 0) {
             playerList = response.players.sample.map(player => player.name).join(", ");
@@ -77,42 +78,33 @@ async function updateServerStatus() {
             }
         }
 
-        // --- MODIFICA PER LA PULIZIA DELLA VERSIONE (FlameCord) ---
+        // --- INIZIO MODIFICA PER LA PULIZIA DELLA VERSIONE ---
         const rawVersionName = response.version.name;
         let cleanVersionName = rawVersionName;
 
-        // Tenta di isolare solo la parte numerica/intervallo
+        // Tenta di trovare e isolare solo la parte numerica/intervallo della versione
+        // (es. estrae "1.7.x-1.21.x" da "FlameCord 1.7.x-1.21.x")
+        // Questa regex è stata ottimizzata per il tuo caso.
         const versionMatch = rawVersionName.match(/(\d+\.\w+\.?\w*-?\d*\.?\w*\.?\w*)/);
         
         if (versionMatch && versionMatch[0]) {
             cleanVersionName = versionMatch[0];
         } else {
-             // Fallback: pulisce il testo tra parentesi (se il formato è diverso)
+             // Fallback: pulisce il testo tra parentesi (es. "(BungeeCord)")
              cleanVersionName = rawVersionName.replace(/\s*\([^)]+\)/g, '');
         }
-        // ------------------------------------------------------------------------
+        // --- FINE MODIFICA ---
 
         const embed = new EmbedBuilder()
             .setTitle("🟢 Minecraft Server Online")
             .setDescription(`🌍 **Server IP:** \`${serverIP}\``)
             .setColor("Green")
             .addFields(
-                // Campo 1: Versione (pulita)
+                // Usa la versione pulita (cleanVersionName)
                 { name: "📝 Version", value: cleanVersionName, inline: true }, 
-                // Campo 2: Giocatori/Max
                 { name: "👥 Players", value: `${response.players.online}/${response.players.max}`, inline: true },
-                // Campo 3: Ping
                 { name: "📊 Ping", value: `${response.roundTripLatency}ms`, inline: true },
-                // Campo 4: Protocollo (Nuovo campo)
-                { name: "📶 Protocollo", value: response.version.protocol, inline: true },
-                // Campo 5: Ultimo Aggiornamento (Nuovo campo)
-                { 
-                    name: "🕟 Ultimo Aggiorn.", 
-                    // <t:timestamp:R> mostra l'ora relativa
-                    value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
-                    inline: true 
-                },
-                // Campo 6: MOTD (Campo completo)
+                { name: "🎮 Online Players", value: playerList, inline: false },
                 { name: "📢 MOTD", value: response.motd.clean || "No message", inline: false }
             )
             .setThumbnail(`https://api.mcsrvstat.us/icon/${serverIP}`)
@@ -123,7 +115,8 @@ async function updateServerStatus() {
         // Ensure the status message exists before editing
         if (!statusMessage) {
             console.log("⚠️ Status message missing! Resending...");
-            await fetchOrCreateStatusMessage(); 
+            // Non usiamo await qui per non bloccare il loop
+            fetchOrCreateStatusMessage(); 
         }
 
         // If the message was deleted, create a new one before updating
