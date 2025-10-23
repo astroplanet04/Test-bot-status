@@ -1,88 +1,75 @@
 # Minecraft Server Status Bot
 
-This is a **premium Discord bot** that **tracks the status of a Minecraft server** and updates a message in a specific channel every 10 seconds. It shows:
-- **Server status** (Online/Offline)
-- **Number of players online**
-- **List of online players**
-- **Server version & ping**
-- **MOTD (Message of the Day)**
+Questo è un bot Discord basato su Node.js che monitora lo stato di un server Minecraft (Java/Bedrock) e aggiorna automaticamente un messaggio incorporato (Embed) in un canale Discord.
+
+**Il bot fornisce le seguenti informazioni in tempo reale:**
+* **Stato del Server** (Online/Offline)
+* **Numero di Giocatori Online**
+* **Lista dei Giocatori Online** (se disponibile)
+* **Versione del Server e Ping**
+* **MOTD** (Message of the Day)
 
 ---
 
-## 📌 Features
-✅ **Automatically updates every 10 seconds**  
-✅ **Detects if the status message was deleted and re-sends it**  
-✅ **Shows player names if available**  
-✅ **Handles long player lists without crashing**  
-✅ **Prevents bot crashes when the server is offline**  
-✅ **Displays a server status image**  
+## 🛠️ Setup e Configurazione
 
----
+Segui questi passaggi per configurare il bot sui tuoi server.
 
----
+### 1️⃣ Prerequisiti
 
-## 📷 Example Output
-![Minecraft Server Status Example](https://i.imgur.com/fQEvB2p.png)
+Assicurati che **Node.js** sia installato sul sistema in cui vuoi eseguire il bot.
 
----
+### 2️⃣ Installazione delle Dipendenze
 
-## 🛠️ Setup
-
-### 1️⃣ Install Dependencies
-Make sure you have Node.js installed, then run:
+Apri il terminale nella directory del bot (dove si trovano `package.json` e `index.js`) ed esegui:
 ```sh
-npm install discord.js dotenv minecraft-server-util
+npm install
+````
+
+*(Questo comando installerà tutte le librerie necessarie: `discord.js`, `dotenv`, e `minecraft-server-util`).*
+
+### 3️⃣ Configurazione delle Variabili d'Ambiente
+
+**IMPORTANTE:** Il bot legge la configurazione **ESCLUSIVAMENTE** dal file **`.env`**. Ignora il vecchio riferimento a `config.json`.
+
+Modifica il file **`.env`** (già presente) e inserisci i tuoi valori specifici.
+
+| Variabile | Descrizione |
+| :--- | :--- |
+| `DISCORD_TOKEN` | Il **Token** segreto del tuo bot Discord (dal Developer Portal). |
+| `SERVER_IP` | L'**IP** o dominio del tuo server Minecraft. |
+| `SERVER_PORT` | La **Porta** del tuo server Minecraft (default per Java: `25565`). |
+| `CHANNEL_ID` | L'**ID del canale** Discord in cui il bot pubblicherà e aggiornerà lo stato. |
+| `UPDATE_INTERVAL` | Intervallo di aggiornamento in **millisecondi** (consigliato: `1000` = 1 secondo). |
+
+**Esempio di `.env` (Sostituisci i valori):**
+
+```
+DISCORD_TOKEN=IL_TUO_TOKEN_SEGRETO_DEL_BOT
+SERVER_IP=mc.tuo-server.net
+SERVER_PORT=25565
+CHANNEL_ID=123456789012345678
+UPDATE_INTERVAL=1000
 ```
 
-### 2️⃣ Configure Settings
-Create a `config.json` file in the bot's root directory and add:
-```json
-{
-  "token": "YOUR_DISCORD_BOT_TOKEN",
-  "serverIP": "your-minecraft-server-ip",
-  "serverPort": 25565,
-  "channelID": "your-discord-channel-id"
-}
-```
-Replace `YOUR_DISCORD_BOT_TOKEN`, `your-minecraft-server-ip`, and `your-discord-channel-id` with your actual values.
+### 4️⃣ Esecuzione del Bot
 
-### 3️⃣ Run the Bot
+Avvia il bot con il comando:
+
 ```sh
 node index.js
 ```
 
----
+**Per l'esecuzione 24/7:** Per garantire che il bot rimanga online, si raccomanda l'uso di un gestore di processi come `pm2` o di un tool come `screen`/`tmux`.
 
-## 📝 Usage
-- The bot will automatically **edit the last message** it sent to update the Minecraft server status.
-- If the message gets deleted, it will **detect the deletion and resend it**.
+-----
 
----
+## 📝 Funzionalità e Troubleshooting
 
-## 🔧 Troubleshooting
-### Bot Crashes on Startup
-Make sure your `config.json` file is set up correctly and that you installed all dependencies.
-```sh
-npm install
-```
+  * **Aggiornamento Continuo:** Il bot aggiorna il messaggio di stato in modo automatico all'intervallo specificato in `.env`.
+  * **Resilience:** Se il messaggio di stato viene eliminato in Discord, il bot lo rileva e ne **ricrea uno nuovo** al ciclo di aggiornamento successivo.
 
-### Bot Not Updating Status
-- Check that the bot has **message editing permissions** in the channel.
-- Ensure that `serverIP` and `channelID` are correct.
+### Problemi Comuni
 
----
-
-## ⚠️ License
-This bot is **open source** but give us credits !
-
----
-
-## 🛠️ Support
-
-For any issues or inquiries, contact us on Discord: [Milcon Development](https://dsc.gg/milcondev)
-
----
-
-## 👨‍💻 Author
-Developed by **Milcon Development** 🚀
-
+  * **Bot non si avvia:** Controlla che tutte le variabili (`DISCORD_TOKEN`, `SERVER_IP`, `SERVER_PORT`, `CHANNEL_ID`) siano presenti e corrette nel file `.env`.
+  * **Lo stato non si aggiorna:** Assicurati che il bot abbia i permessi necessari (`Invia Messaggi`, `Gestisci Messaggi/Embed Links`) nel canale specificato da `CHANNEL_ID`.
