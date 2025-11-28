@@ -1,6 +1,7 @@
 {
-    "token": "YOUR_DISCORD_BOT_TOKEN",
-    "serverIP": "your-minecraft-server-ip",
-    "serverPort": 25565,
-    "channelID": "your-discord-channel-id"
-  }
+  "token": "YOUR_DISCORD_BOT_TOKEN",
+  "serverIP": "your-minecraft-server-ip",
+  "serverPort": 25565,
+  "channelID": "your-public-channel-id",
+  "adminChannelID": "1443912958303277198"
+}
