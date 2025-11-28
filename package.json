@@ -1,23 +1,16 @@
 {
-  "name": "minecraft-status-bot",
-  "version": "1.0.0",
-  "description": "This is a premium Discord bot that tracks the status of a Minecraft server and updates a message in a specific channel every 10 seconds.",
+  "name": "brevthcraft-dashboard",
+  "version": "4.0.0",
+  "description": "Minecraft Server Dashboard",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [
-    "minecraft",
-    "status",
-    "bot",
-    "mc",
-    "status"
-  ],
-  "author": "milcondev",
-  "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.18.0",
-    "dotenv": "^16.4.7",
-    "minecraft-server-util": "^5.4.4"
+    "discord.js": "^14.14.1",
+    "minecraft-server-util": "^3.11.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5"
   }
 }
